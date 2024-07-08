@@ -1,0 +1,231 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+// Enum class for Department
+enum Department {
+    IT, HR, Finance, Admin
+}
+
+public class EmployeePayrollSystem extends JFrame {
+    private final JTextField idField;
+    private final JTextField nameField;
+    private final JComboBox<Department> departmentComboBox;
+    private final JTextField designationField;
+    private final JTextField basicSalaryField;
+    private final JTextField allowanceField;
+    private final JTextField deductionField;
+    private final DefaultListModel<Employee> employeeListModel;
+    private static final String EMPLOYEE_FILE = "employees.dat";
+
+    public EmployeePayrollSystem() {
+        setTitle("Employee Payroll System");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        idField = new JTextField(10);
+        nameField = new JTextField(20);
+        departmentComboBox = new JComboBox<>(Department.values());
+        designationField = new JTextField(20);
+        basicSalaryField = new JTextField(10);
+        allowanceField = new JTextField(10);
+        deductionField = new JTextField(10);
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridLayout(7, 2));
+        inputPanel.add(new JLabel("ID:"));
+        inputPanel.add(idField);
+        inputPanel.add(new JLabel("Name:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Department:"));
+        inputPanel.add(departmentComboBox);
+        inputPanel.add(new JLabel("Designation:"));
+        inputPanel.add(designationField);
+        inputPanel.add(new JLabel("Basic Salary:"));
+        inputPanel.add(basicSalaryField);
+        inputPanel.add(new JLabel("Allowance:"));
+        inputPanel.add(allowanceField);
+        inputPanel.add(new JLabel("Deduction:"));
+        inputPanel.add(deductionField);
+
+        JButton addEmployeeButton = new JButton("Add Employee");
+        addEmployeeButton.addActionListener(new AddEmployeeAction());
+
+        JButton saveButton = new JButton("Save");
+        saveButton.addActionListener(new SaveAction());
+
+        JButton loadButton = new JButton("Load");
+        loadButton.addActionListener(new LoadAction());
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(addEmployeeButton);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(loadButton);
+
+        employeeListModel = new DefaultListModel<>();
+        JList<Employee> employeeList = new JList<>(employeeListModel);
+
+        add(inputPanel, BorderLayout.NORTH);
+        add(buttonPanel, BorderLayout.CENTER);
+        add(new JScrollPane(employeeList), BorderLayout.SOUTH);
+    }
+
+    private class AddEmployeeAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                final int id = Integer.parseInt(idField.getText());
+                final String name = nameField.getText();
+                final Department department = (Department) departmentComboBox.getSelectedItem();
+                final String designation = designationField.getText();
+                final double basicSalary = Double.parseDouble(basicSalaryField.getText());
+                final double allowance = Double.parseDouble(allowanceField.getText());
+                final double deduction = Double.parseDouble(deductionField.getText());
+
+                final Employee employee = new Employee(id, name, department, designation, basicSalary, allowance, deduction);
+                employeeListModel.addElement(employee);
+
+                clearInputFields();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(EmployeePayrollSystem.this, "Invalid input! Please enter numeric values for ID, Salary, Allowance, and Deduction.");
+            }
+        }
+
+        private void clearInputFields() {
+            idField.setText("");
+            nameField.setText("");
+            departmentComboBox.setSelectedIndex(0);
+            designationField.setText("");
+            basicSalaryField.setText("");
+            allowanceField.setText("");
+            deductionField.setText("");
+        }
+    }
+
+    private class SaveAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            final List<Employee> employees = new ArrayList<>();
+            for (int i = 0; i < employeeListModel.size(); i++) {
+                employees.add(employeeListModel.getElementAt(i));
+            }
+            try {
+                SerializationUtil.saveToFile(employees, EMPLOYEE_FILE);
+                JOptionPane.showMessageDialog(EmployeePayrollSystem.this, "Employees saved successfully!");
+            } catch (final IOException ex) {
+                JOptionPane.showMessageDialog(EmployeePayrollSystem.this, "Failed to save employees.");
+            }
+        }
+    }
+
+    private class LoadAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                final List<Employee> employees = (List<Employee>) SerializationUtil.loadFromFile(EMPLOYEE_FILE);
+                employeeListModel.clear();
+                for (final Employee employee : employees) {
+                    employeeListModel.addElement(employee);
+                }
+                JOptionPane.showMessageDialog(EmployeePayrollSystem.this, "Employees loaded successfully!");
+            } catch (final IOException | ClassNotFoundException ex) {
+                JOptionPane.showMessageDialog(EmployeePayrollSystem.this, "Failed to load employees.");
+            }
+        }
+    }
+
+    public static void main(final String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            final EmployeePayrollSystem app = new EmployeePayrollSystem();
+            app.setVisible(true);
+        });
+    }
+
+    static class Employee implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final int id;
+        private final String name;
+        private final Department department;
+        private final String designation;
+        private final double basicSalary;
+        private final double allowance;
+        private final double deduction;
+
+        public Employee(final int id, final String name, final Department department, final String designation, final double basicSalary, final double allowance, final double deduction) {
+            this.id = id;
+            this.name = name;
+            this.department = department;
+            this.designation = designation;
+            this.basicSalary = basicSalary;
+            this.allowance = allowance;
+            this.deduction = deduction;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Department getDepartment() {
+            return department;
+        }
+
+        public String getDesignation() {
+            return designation;
+        }
+
+        public double getBasicSalary() {
+            return basicSalary;
+        }
+
+        public double getAllowance() {
+            return allowance;
+        }
+
+        public double getDeduction() {
+            return deduction;
+        }
+
+        public double calculateNetSalary() {
+            return basicSalary + allowance - deduction;
+        }
+
+        @Override
+        public String toString() {
+            return "Employee{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", department=" + department +
+                    ", designation='" + designation + '\'' +
+                    ", basicSalary=" + basicSalary +
+                    ", allowance=" + allowance +
+                    ", deduction=" + deduction +
+                    '}';
+        }
+    }
+
+    static class SerializationUtil {
+        public static void saveToFile(final Object obj, final String filename) throws IOException {
+            try (final FileOutputStream fileOut = new FileOutputStream(filename);
+                 final ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+                out.writeObject(obj);
+            }
+        }
+
+        public static Object loadFromFile(final String filename) throws IOException, ClassNotFoundException {
+            try (final FileInputStream fileIn = new FileInputStream(filename);
+                 final ObjectInputStream in = new ObjectInputStream(fileIn)) {
+                return in.readObject();
+            }
+        }
+    }
+}
